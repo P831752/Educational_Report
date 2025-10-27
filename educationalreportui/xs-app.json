@@ -3,6 +3,13 @@
   "authenticationMethod": "route",
   "routes": [
     {
+      "source": "^/odata/v4/educational/(.*)$",
+      "target": "/odata/v4/educational/$1",
+      "destination": "EDUCATIONAL_SRV",
+      "authenticationType": "none",
+      "csrfProtection": false
+    },
+    {
       "source": "^/odata/(.*)$",
       "target": "/odata/$1",
       "destination": "SF_DEST",

@@ -16,9 +16,13 @@ server:
             - /test-resources
           url: https://ui5.sap.com
         backend:
-          - path: /odata
-            url: https://api10preview.sapsf.com
+          - url: https://api10preview.sapsf.com
+            authenticationType: BasicAuthentication
             destination: SF_DEST
+            path: /odata/v2
+          - path: /odata/v4/educational
+            url: https://larsen---toubro-limited-sf-ext-preview-pspace-education564a7b4e.cfapps.in30.hana.ondemand.com
+            destination: EDUCATIONAL_SRV
     - name: fiori-tools-appreload
       afterMiddleware: compression
       configuration:

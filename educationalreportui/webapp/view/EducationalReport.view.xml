@@ -1,6 +1,122 @@
 <mvc:View controllerName="com.lt.educationalreportui.controller.EducationalReport"
-    xmlns:mvc="sap.ui.core.mvc"
-    xmlns="sap.m">
-    <Page id="page" title="{i18n>title}">
-    </Page>
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m"
+	xmlns:fb="sap.ui.comp.filterbar"
+	xmlns:f="sap.f"
+	xmlns:core="sap.ui.core">
+	<f:DynamicPage>
+		<f:title>
+			<f:DynamicPageTitle>
+				<f:heading >
+					<Title text="{i18n>title}" textAlign="Center">
+				</Title>
+				</f:heading>
+			</f:DynamicPageTitle>
+		</f:title>
+		<f:content> 
+		<VBox>
+		<Table
+				id="idTable"
+				inset="false"
+				items="{reportModel>/}">
+				<headerToolbar>
+					<OverflowToolbar>			
+						<ToolbarSpacer />
+						<Button text="Export" icon="sap-icon://excel-attachment" press="onReportExport"/>
+					</OverflowToolbar>
+				</headerToolbar>
+				<columns>
+					<Column width="10%">
+						<Text text="IC" />
+					</Column>
+					<Column width="30%">
+						<Text text="IC Text" />
+					</Column>
+					<Column width="10%">
+						<Text text="Save As Draft" />
+					</Column>
+					<Column width="10%">
+						<Text text="Pending Approval" />
+					</Column>
+					<Column width="10%">
+						<Text text="Approved" />
+					</Column>
+					<Column width="10%">
+						<Text text="Self Approved" />
+					</Column>
+					<Column width="10%">
+						<Text text="Rejected" />
+					</Column>
+					<Column width="10%">
+						<Text text="No Action Yet" />
+					</Column>
+					<Column width="10%">
+						<Text text="Total" />
+					</Column>
+				</columns>
+				<items>
+					<ColumnListItem vAlign="Middle">
+						<cells>
+							<Text text="{reportModel>IC}" />
+							<Text text="{reportModel>ICText}" />
+							<Link text="{reportModel>D}" press="onLinkPress" />
+							<Link text="{reportModel>PA}" press="onLinkPress" />
+							<Link text="{reportModel>A}" press="onLinkPress" /> 
+							<Link text="{reportModel>SA}" press="onLinkPress" /> 
+							<Link text="{reportModel>R}" press="onLinkPress" />
+							<Text text="{reportModel>NAY}" />
+							<Text text="{reportModel>Total}" />
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+
+			<Table
+				id="idTableDetail"
+				inset="false" class="sapUiMediumMarginTop"
+				items="{reportDetailModel>/}">
+				<headerToolbar>
+					<OverflowToolbar>
+						<Title text="Report Details" level="H2"/>	
+						<ToolbarSpacer />
+						<Button text="Export" icon="sap-icon://excel-attachment" press="onDetailExport"/>
+					</OverflowToolbar>
+				</headerToolbar>
+				<columns>
+					<Column>
+						<Text text="PSID" />
+					</Column>
+					<Column>
+						<Text text="Name" />
+					</Column>
+					<Column>
+						<Text text="IC" />
+					</Column>
+					<Column>
+						<Text text="ICHR" />
+					</Column>
+					<Column>
+						<Text text="Status" />
+					</Column>
+					<Column>
+						<Text text="Modified On" />
+					</Column>
+				</columns>
+				<items>
+					<ColumnListItem vAlign="Middle">
+						<cells>
+							<Text text="{reportDetailModel>psid}" />
+							<Text text="{reportDetailModel>name}" />
+							<Text text="{reportDetailModel>ic}" />
+							<Text text="{reportDetailModel>ichr}" />
+							<ObjectStatus text="{path: 'reportDetailModel>status', formatter: '.formatter.statusText'}"
+							 	state="{path: 'reportDetailModel>status', formatter: '.formatter.statusState'}" />
+							<Text text="{reportDetailModel>modifiedAt}" />
+						</cells>
+					</ColumnListItem>
+				</items>
+			</Table>
+			</VBox>
+		</f:content> 
+	</f:DynamicPage>
 </mvc:View>
