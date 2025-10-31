@@ -1,13 +1,14 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/json/JSONModel",
+    "sap/m/MessageToast",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
     "com/lt/educationalreportui/model/Formatter",
     "sap/m/MessageBox",
     "sap/ui/export/Spreadsheet",
     "sap/ui/export/library"
-], (Controller, JSONModel, Filter, FilterOperator, Formatter, MessageBox, Spreadsheet, exportLibrary) => {
+], (Controller, JSONModel, MessageToast, Filter, FilterOperator, Formatter, MessageBox, Spreadsheet, exportLibrary) => {
     "use strict"
 
     let EdmType = exportLibrary.EdmType
@@ -21,82 +22,176 @@ sap.ui.define([
             //Model Initialization
             let oModel = new JSONModel()
             this.getView().setModel(oModel, "reportModel")
-
             let deModel = new JSONModel()
             this.getView().setModel(deModel, "reportDetailModel")
 
             //To fetch the Current Logged in user
-            // this.currentUser = await this.getUserInfo()
-            this.currentUser = "20367055"
+            let email = await this.getUserInfo()
+            if (!email) {
+                throw new Error("Unable to get Logged User Email ID. Please check with ICHR")
+            }
+            // Step 3: Get PSID using email
+            this.currentUser = await this.getPSID(email)
+            if (!this.currentUser) {
+                throw new Error("PSID not found for the logged-in user.")
+            }
+            // this.currentUser = "20069121" //Admin: 20069121 20080608 20312919 HR: 20367055 244324
 
             //Get Permission group of Current User
-            // await this.getPermissionGroup()
+            let permissionGrp = await this.getPermissionGroup()
 
+            if(permissionGrp.group){
             //To fetch all the ICs
-            this.icData = await this.getICs()
-
+            this.icData = await this.getICs(permissionGrp.userIC)
             //To fetch all the Records 
             this.fetchRecords()
-        },
-
-        async getUserInfo() {
-            const userModel = this.getView().getModel("userModel");
-
-            try {
-                const response = await fetch("/services/userapi/currentUser");
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log("BTP User Info:", data);
-                // Show welcome message
-                MessageToast.show(`Welcome ${data.firstname} ${data.lastname}`);
-                return data.name;
-            } 
-            
-            catch (error) {
-                console.error("Error fetching user info:", error);
-                MessageToast.show("Unable to fetch user info");
-                return null;
             }
+            
+            else{
+                this.getView().setBusy(false)
+                MessageBox.warning("User do not have permission to view IC Records")
+            }
+
         },
+
+        //To SF-BTP SSO Logged User	
+		async getUserInfo() {
+			try {
+				let response = await fetch("/services/userapi/currentUser")
+
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`)
+				}
+
+				let data = await response.json()
+				console.log("BTP User Info:", data)
+
+				// Show welcome message
+				MessageToast.show(`Welcome ${data.firstname} ${data.lastname}`)
+				console.log("Logged user:" + data.name)
+				return data.email
+
+			} catch (err) {
+				console.log("Error fetching user info", err)
+				MessageToast.show("Unable to fetch user info")
+				return null // return null so caller can handle it
+			}
+		},
+
+        getPSID(email) {
+			return new Promise((resolve, reject) => {
+				let oModel = this.getOwnerComponent().getModel()
+
+				let aFilters = [
+					new Filter("emailAddress", FilterOperator.EQ, email),
+					new Filter("emailType", FilterOperator.EQ, "12824"),
+				]
+
+				oModel.read("/PerEmail", {
+					filters: aFilters,
+					success: (oData) => {
+						if (oData.results.length > 0) {
+							let psId = oData.results[0].personIdExternal
+							resolve(psId)
+						} else {
+							reject(new Error("No PSID found for the given email."))
+						}
+					},
+					error: (err) => {
+						console.error("Failed to fetch PSID:", err)
+						reject(new Error("Error fetching PSID."))
+					}
+				})
+			})
+		},
 
         getPermissionGroup() {
-            const oModel = this.getOwnerComponent().getModel();
+            let oModel = this.getOwnerComponent().getModel()
             return new Promise((resolve, reject) => {
                 oModel.read("/getDynamicGroupsByUser", {
                     urlParameters: {
-                        "$filter": `businessUnit eq '${this.currentUser}'`
+                        userId: `'${this.currentUser}'`,
+                        groupSubType: "permission"
                     },
-                    success: (oData, response) => {
-                        resolve(oData);
+                    success: async (oData) => {
+                        let permissionGrp = {}
+                        // Check for Admin Group: "EDU_BTP_ADM_RPT_ALL"
+                        let adminGroup = oData.results.some(group => group.groupId === "13414")
+                        if (adminGroup) {
+                            permissionGrp.group = "13414"
+                        } else {
+                            // Check for HR Group: "EDU_BTP_IC_HRADM_RPT"
+                            let hrGroup = oData.results.some(group => group.groupId === "13413")
+                            if (hrGroup) {
+                                permissionGrp.group = "13413"
+                                permissionGrp.userIC = await this.getUserIc()
+                            }
+                        }
+                        resolve(permissionGrp)
                     },
                     error: (oError) => {
-                        console.error("Error fetching dynamic groups:", oError);
-                        reject(oError);
+                        console.error("Error fetching permission groups:", oError)
+                        reject(oError)
                     }
-                });
-            });
+                })
+            })
         },
 
-        getICs() {
+        getUserIc() {
+            let oModel = this.getOwnerComponent().getModel()
+            return new Promise((resolve, reject) => {
+                let aFilters = [
+                    new Filter("userId", FilterOperator.EQ, this.currentUser)
+                ]
+                let url = "/EmpJob?$select=userId,payGrade,businessUnit,businessUnitNav/name"
+
+                oModel.read(url, {
+                    filters: aFilters,
+                    success: (oData) => {
+                        resolve(oData.results[0].businessUnit)
+                    },
+                    error: (oError) => {
+                        resolve(oError)
+                    }
+                })
+            })
+        },
+
+        getICs(userIC) {
             return new Promise((resolve, reject) => {
                 let oModel = this.getOwnerComponent().getModel()
-                let oFilter = new Filter({
+
+                // Define exclusion filters for externalCode
+                const exclusionFilters = new Filter({
                     filters: [
-                        new Filter("status", FilterOperator.EQ, "A"),
-                        new Filter({
-                            filters: [
-                                new Filter("externalCode", FilterOperator.NE, "NOT"),
-                                new Filter("externalCode", FilterOperator.NE, "LTSCTDM"),
-                                new Filter("externalCode", FilterOperator.NE, "LTFS"),
-                                new Filter("externalCode", FilterOperator.NE, "LTCG")
-                            ],
-                            and: true // Ensures this externalCode values are excluded
-                        })
+                        new Filter("externalCode", FilterOperator.NE, "NOT"),
+                        new Filter("externalCode", FilterOperator.NE, "LTSCTDM"),
+                        new Filter("externalCode", FilterOperator.NE, "LTFS"),
+                        new Filter("externalCode", FilterOperator.NE, "LTCG")
                     ],
                     and: true
-                })
+                });
+
+                let oFilter;
+
+                if (userIC) {
+                    oFilter = new Filter({
+                        filters: [
+                            new Filter("status", FilterOperator.EQ, "A"),
+                            new Filter("externalCode", FilterOperator.EQ, userIC),
+                            exclusionFilters
+                        ],
+                        and: true
+                    });
+                } else {
+                    oFilter = new Filter({
+                        filters: [
+                            new Filter("status", FilterOperator.EQ, "A"),
+                            exclusionFilters
+                        ],
+                        and: true
+                    });
+                }
 
                 oModel.read("/FOBusinessUnit", {
                     filters: [oFilter],
@@ -150,6 +245,7 @@ sap.ui.define([
         fetchRecords() {
             let oModel = this.getOwnerComponent().getModel("educational")
             let oBinding = oModel.bindList("/Educational_Details")
+            let detailData = []
 
             oBinding.requestContexts().then((aContexts) => {
                 let oData = aContexts.map((oContext) => oContext.getObject())
@@ -192,6 +288,7 @@ sap.ui.define([
                     if (!icMap[icCode].psidSet.has(psid)) {
                         icMap[icCode].psidSet.add(psid)
                         icMap[icCode].Records.push(item)
+                        detailData.push(item)
 
                         if (status && allStatuses.includes(status)) {
                             icMap[icCode][status] += 1
@@ -213,6 +310,10 @@ sap.ui.define([
 
                 this.getView().getModel("reportModel").setData(finalData)
                 this.getView().getModel("reportModel").updateBindings()
+
+                this.getView().getModel("reportDetailModel").setData(detailData)
+                this.getView().getModel("reportDetailModel").updateBindings()
+
                 this.getView().setBusy(false)
             })
                 .catch((oError) => {
@@ -268,7 +369,7 @@ sap.ui.define([
             let oSpreadsheet = new Spreadsheet(oSettings)
             oSpreadsheet.build()
                 .then(function () {
-                    sap.m.MessageToast.show("Filtered export completed")
+                    MessageToast.show("Filtered export completed")
                 })
                 .catch(function (err) {
                     console.error("Export error:", err)
@@ -289,16 +390,14 @@ sap.ui.define([
             ]
         },
 
-        onDetailExport() {
+        onDetailExport: function () {
             let aCols = this._detailColumnConfig()
-            let oTable = this.byId("idTableDetail")
 
-            // Get filtered items from the table
-            let aItems = oTable.getItems()
-            let aFilteredData = aItems.map(function (oItem) {
-                let oContext = oItem.getBindingContext("reportDetailModel")
-                let oData = oContext.getObject()
+            // Get all data directly from the model
+            let aAllData = this.getView().getModel("reportDetailModel").getData()
 
+            // Map and format the data
+            let aFilteredData = aAllData.map(function (oData) {
                 return {
                     psid: oData.psid,
                     name: oData.name,
@@ -309,20 +408,17 @@ sap.ui.define([
                 }
             }.bind(this))
 
+            // Spreadsheet settings
             let oSettings = {
                 workbook: { columns: aCols },
                 dataSource: aFilteredData,
                 fileName: "Education Validation Admin Details Report.xlsx"
             }
 
-            let oSpreadsheet = new Spreadsheet(oSettings)
-            oSpreadsheet.build()
-                .then(function () {
-                    sap.m.MessageToast.show("Filtered export completed")
-                })
-                .catch(function (err) {
-                    console.error("Export error:", err)
-                })
+            // Build and export
+            new Spreadsheet(oSettings).build()
+                .then(() => MessageToast.show("Export completed"))
+                .catch(err => console.error("Export error:", err))
         },
 
         _detailColumnConfig() {

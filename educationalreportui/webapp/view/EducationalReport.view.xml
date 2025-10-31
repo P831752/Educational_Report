@@ -20,9 +20,11 @@
 				inset="false"
 				items="{reportModel>/}">
 				<headerToolbar>
-					<OverflowToolbar>			
+					<OverflowToolbar>
+						<Title text="Report" level="H2"/>				
 						<ToolbarSpacer />
 						<Button text="Export" icon="sap-icon://excel-attachment" press="onReportExport"/>
+						<Link text="Admin Detail Report " endIcon="sap-icon://excel-attachment" press="onDetailExport" emphasized="true"/>
 					</OverflowToolbar>
 				</headerToolbar>
 				<columns>
@@ -59,11 +61,11 @@
 						<cells>
 							<Text text="{reportModel>IC}" />
 							<Text text="{reportModel>ICText}" />
-							<Link text="{reportModel>D}" press="onLinkPress" />
-							<Link text="{reportModel>PA}" press="onLinkPress" />
-							<Link text="{reportModel>A}" press="onLinkPress" /> 
-							<Link text="{reportModel>SA}" press="onLinkPress" /> 
-							<Link text="{reportModel>R}" press="onLinkPress" />
+							<Text text="{reportModel>D}" />
+							<Text text="{reportModel>PA}" />
+							<Text text="{reportModel>A}" /> 
+							<Text text="{reportModel>SA}" /> 
+							<Text text="{reportModel>R}" />
 							<Text text="{reportModel>NAY}" />
 							<Text text="{reportModel>Total}" />
 						</cells>
@@ -71,13 +73,18 @@
 				</items>
 			</Table>
 
-			<Table
+			<!-- <HBox class="sapUiMediumMarginTop">
+				<Title text="Admin Detail Report: " level="H6" class="sapUiTinyMarginTop sapUiTinyMarginEnd"/>
+				<Button text="Export" icon="sap-icon://excel-attachment" press="onDetailExport" />
+			</HBox> -->
+
+			<!-- <Table
 				id="idTableDetail"
 				inset="false" class="sapUiMediumMarginTop"
 				items="{reportDetailModel>/}">
 				<headerToolbar>
 					<OverflowToolbar>
-						<Title text="Report Details" level="H2"/>	
+						<Title text="Admin Detail Report" level="H2"/>	
 						<ToolbarSpacer />
 						<Button text="Export" icon="sap-icon://excel-attachment" press="onDetailExport"/>
 					</OverflowToolbar>
@@ -115,7 +122,7 @@
 						</cells>
 					</ColumnListItem>
 				</items>
-			</Table>
+			</Table> -->
 			</VBox>
 		</f:content> 
 	</f:DynamicPage>
