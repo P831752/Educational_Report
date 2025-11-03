@@ -116,14 +116,14 @@ sap.ui.define([
                     success: async (oData) => {
                         let permissionGrp = {}
                         // Check for Admin Group: "EDU_BTP_ADM_RPT_ALL"
-                        let adminGroup = oData.results.some(group => group.groupId === "13414")
+                        let adminGroup = oData.results.some(group => group.groupName === "EDU_BTP_ADM_RPT_ALL")
                         if (adminGroup) {
-                            permissionGrp.group = "13414"
+                            permissionGrp.group = "EDU_BTP_ADM_RPT_ALL"
                         } else {
                             // Check for HR Group: "EDU_BTP_IC_HRADM_RPT"
-                            let hrGroup = oData.results.some(group => group.groupId === "13413")
+                            let hrGroup = oData.results.some(group => group.groupId === "EDU_BTP_IC_HRADM_RPT")
                             if (hrGroup) {
-                                permissionGrp.group = "13413"
+                                permissionGrp.group = "EDU_BTP_IC_HRADM_RPT"
                                 permissionGrp.userIC = await this.getUserIc()
                             }
                         }
