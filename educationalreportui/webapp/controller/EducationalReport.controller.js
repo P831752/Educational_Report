@@ -26,16 +26,16 @@ sap.ui.define([
             this.getView().setModel(deModel, "reportDetailModel")
 
             //To fetch the Current Logged in user
-            let email = await this.getUserInfo()
-            if (!email) {
-                throw new Error("Unable to get Logged User Email ID. Please check with ICHR")
-            }
-            // Step 3: Get PSID using email
-            this.currentUser = await this.getPSID(email)
-            if (!this.currentUser) {
-                throw new Error("PSID not found for the logged-in user.")
-            }
-            // this.currentUser = "20069121" //Admin: 20069121 20080608 20312919 HR: 20367055 244324
+            // let email = await this.getUserInfo()
+            // if (!email) {
+            //     throw new Error("Unable to get Logged User Email ID. Please check with ICHR")
+            // }
+            // // Step 3: Get PSID using email
+            // this.currentUser = await this.getPSID(email)
+            // if (!this.currentUser) {
+            //     throw new Error("PSID not found for the logged-in user.")
+            // }
+            this.currentUser = "244324" //Admin: 20069121 20080608 20312919 HR: 20367055 244324
 
             //Get Permission group of Current User
             let permissionGrp = await this.getPermissionGroup()
@@ -121,7 +121,7 @@ sap.ui.define([
                             permissionGrp.group = "EDU_BTP_ADM_RPT_ALL"
                         } else {
                             // Check for HR Group: "EDU_BTP_IC_HRADM_RPT"
-                            let hrGroup = oData.results.some(group => group.groupId === "EDU_BTP_IC_HRADM_RPT")
+                            let hrGroup = oData.results.some(group => group.groupName === "EDU_BTP_IC_HRADM_RPT")
                             if (hrGroup) {
                                 permissionGrp.group = "EDU_BTP_IC_HRADM_RPT"
                                 permissionGrp.userIC = await this.getUserIc()
@@ -407,6 +407,13 @@ sap.ui.define([
                     modifiedAt: oData.modifiedAt
                 }
             }.bind(this))
+
+
+            // Check for empty records
+            if (!aFilteredData || aFilteredData.length === 0) {
+                MessageToast.show("No data available to export.");
+                return;
+            }
 
             // Spreadsheet settings
             let oSettings = {
