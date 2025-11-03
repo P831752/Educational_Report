@@ -26,16 +26,16 @@ sap.ui.define([
             this.getView().setModel(deModel, "reportDetailModel")
 
             //To fetch the Current Logged in user
-            // let email = await this.getUserInfo()
-            // if (!email) {
-            //     throw new Error("Unable to get Logged User Email ID. Please check with ICHR")
-            // }
-            // // Step 3: Get PSID using email
-            // this.currentUser = await this.getPSID(email)
-            // if (!this.currentUser) {
-            //     throw new Error("PSID not found for the logged-in user.")
-            // }
-            this.currentUser = "244324" //Admin: 20069121 20080608 20312919 HR: 20367055 244324
+            let email = await this.getUserInfo()
+            if (!email) {
+                throw new Error("Unable to get Logged User Email ID. Please check with ICHR")
+            }
+            // Step 3: Get PSID using email
+            this.currentUser = await this.getPSID(email)
+            if (!this.currentUser) {
+                throw new Error("PSID not found for the logged-in user.")
+            }
+            // this.currentUser = "244324" //Admin: 20069121 20080608 20312919 HR: 20367055 244324
 
             //Get Permission group of Current User
             let permissionGrp = await this.getPermissionGroup()
