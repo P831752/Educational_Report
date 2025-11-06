@@ -35,75 +35,74 @@ sap.ui.define([
             if (!this.currentUser) {
                 throw new Error("PSID not found for the logged-in user.")
             }
-            // this.currentUser = "244324" //Admin: 20069121 20080608 20312919 HR: 20367055 244324
+            // this.currentUser = "20069121" //Admin: 20069121 20080608 20312919 HR: 20367055 244324
 
             //Get Permission group of Current User
             let permissionGrp = await this.getPermissionGroup()
 
-            if(permissionGrp.group){
-            //To fetch all the ICs
-            this.icData = await this.getICs(permissionGrp.userIC)
-            //To fetch all the Records 
-            this.fetchRecords()
+            if (permissionGrp.group) {
+                //To fetch all the ICs
+                this.icData = await this.getICs(permissionGrp.userIC)
+                //To fetch all the Records 
+                this.fetchRecords()
             }
-            
-            else{
+            else {
                 this.getView().setBusy(false)
                 MessageBox.warning("User do not have permission to view IC Records")
             }
-
+            
         },
 
         //To SF-BTP SSO Logged User	
-		async getUserInfo() {
-			try {
-				let response = await fetch("/services/userapi/currentUser")
+        async getUserInfo() {
+            try {
+                let response = await fetch("/services/userapi/currentUser")
 
-				if (!response.ok) {
-					throw new Error(`HTTP error! status: ${response.status}`)
-				}
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
 
-				let data = await response.json()
-				console.log("BTP User Info:", data)
+                let data = await response.json()
+                console.log("BTP User Info:", data)
 
-				// Show welcome message
-				MessageToast.show(`Welcome ${data.firstname} ${data.lastname}`)
-				console.log("Logged user:" + data.name)
-				return data.email
+                // Show welcome message
+                MessageToast.show(`Welcome ${data.firstname} ${data.lastname}`)
+                console.log("Logged user:" + data.name)
+                return data.email
 
-			} catch (err) {
-				console.log("Error fetching user info", err)
-				MessageToast.show("Unable to fetch user info")
-				return null // return null so caller can handle it
-			}
-		},
+            } catch (err) {
+                console.log("Error fetching user info", err)
+                MessageToast.show("Unable to fetch user info")
+                return null // return null so caller can handle it
+            }
+        },
 
         getPSID(email) {
-			return new Promise((resolve, reject) => {
-				let oModel = this.getOwnerComponent().getModel()
+            return new Promise((resolve, reject) => {
+                let oModel = this.getOwnerComponent().getModel()
 
-				let aFilters = [
-					new Filter("emailAddress", FilterOperator.EQ, email),
-					new Filter("emailType", FilterOperator.EQ, "12824"),
-				]
+                let aFilters = [
+                    new Filter("emailAddress", FilterOperator.EQ, email),
+                    new Filter("emailType", FilterOperator.EQ, "12824"),
+                ]
 
-				oModel.read("/PerEmail", {
-					filters: aFilters,
-					success: (oData) => {
-						if (oData.results.length > 0) {
-							let psId = oData.results[0].personIdExternal
-							resolve(psId)
-						} else {
-							reject(new Error("No PSID found for the given email."))
-						}
-					},
-					error: (err) => {
-						console.error("Failed to fetch PSID:", err)
-						reject(new Error("Error fetching PSID."))
-					}
-				})
-			})
-		},
+                oModel.read("/PerEmail", {
+                    filters: aFilters,
+                    success: (oData) => {
+                        if (oData.results.length > 0) {
+                            let psId = oData.results[0].personIdExternal
+                            resolve(psId)
+                        } else {
+                            reject(new Error("No PSID found for the given email."))
+                        }
+                    },
+                    error: (err) => {
+                        console.error("Failed to fetch PSID:", err)
+                        reject(new Error("Error fetching PSID."))
+                    }
+                })
+            })
+        },
 
         getPermissionGroup() {
             let oModel = this.getOwnerComponent().getModel()
@@ -162,7 +161,7 @@ sap.ui.define([
                 let oModel = this.getOwnerComponent().getModel()
 
                 // Define exclusion filters for externalCode
-                const exclusionFilters = new Filter({
+                let exclusionFilters = new Filter({
                     filters: [
                         new Filter("externalCode", FilterOperator.NE, "NOT"),
                         new Filter("externalCode", FilterOperator.NE, "LTSCTDM"),
@@ -170,10 +169,9 @@ sap.ui.define([
                         new Filter("externalCode", FilterOperator.NE, "LTCG")
                     ],
                     and: true
-                });
+                })
 
-                let oFilter;
-
+                let oFilter
                 if (userIC) {
                     oFilter = new Filter({
                         filters: [
@@ -182,7 +180,7 @@ sap.ui.define([
                             exclusionFilters
                         ],
                         and: true
-                    });
+                    })
                 } else {
                     oFilter = new Filter({
                         filters: [
@@ -190,7 +188,7 @@ sap.ui.define([
                             exclusionFilters
                         ],
                         and: true
-                    });
+                    })
                 }
 
                 oModel.read("/FOBusinessUnit", {
@@ -301,14 +299,43 @@ sap.ui.define([
                 // Step 3: Finalize data
                 let finalData = Object.values(icMap).map(entry => {
                     let icInfo = this.icData.find(ic => ic.icCode === entry.IC)
-                    entry.Total = icInfo ? icInfo.totalCount : 0
+                    entry.Total = icInfo ? Number(icInfo.totalCount) : 0
                     entry.NAY = entry.Total - entry.summation
 
                     delete entry.psidSet
                     return entry
                 })
 
-                this.getView().getModel("reportModel").setData(finalData)
+                // Extra Row for total count of all the countable columns
+                let totalRow = {
+                    IC: "Total",
+                    ICText: "",
+                    D: 0, PA: 0, A: 0, SA: 0, R: 0, NAY: 0, Total: 0,
+                    _isTotal: true
+                }
+
+                finalData.forEach(row => {
+                    totalRow.D += row.D
+                    totalRow.PA += row.PA
+                    totalRow.A += row.A
+                    totalRow.SA += row.SA
+                    totalRow.R += row.R
+                    totalRow.NAY += row.NAY
+                    totalRow.Total += row.Total
+                })
+
+                finalData.push(totalRow)
+
+                let sortedData = finalData
+                    .filter(row => !row._isTotal) // exclude total row
+                    .sort((a, b) => a.IC.localeCompare(b.IC)) // sort by IC
+
+                sortedData.push(finalData.find(row => row._isTotal)) 
+
+                //Set Row Count
+                this.byId("idReportTable").setVisibleRowCount(sortedData.length)
+
+                this.getView().getModel("reportModel").setData(sortedData)
                 this.getView().getModel("reportModel").updateBindings()
 
                 this.getView().getModel("reportDetailModel").setData(detailData)
@@ -321,28 +348,25 @@ sap.ui.define([
                 })
         },
 
-        onLinkPress(oEvent) {
-            let sPath = oEvent.getSource().getBindingContext("reportModel").getPath()
-            let statusPath = oEvent.getSource().getBindingInfo("text").binding.getPath()
-            let records = this.getView().getModel("reportModel").getProperty(sPath).Records
-            let filteredData
+        onICFilter(oEvent) {
+            let oBinding = this.byId("idReportTable").getBinding("rows")
+            let sValue = oEvent.getSource().getValue()
 
-            filteredData = records.filter(item => item.status === statusPath)
-            // if (statusPath !== "Total") {
-            //     filteredData = records.filter(item => item.status === statusPath)
-            // } else {
-            //     filteredData = records
-            // }
-
-            this.getView().getModel("reportDetailModel").setData(filteredData)
+            let oFilter = new Filter({
+                filters: [
+                    new Filter("IC", FilterOperator.Contains, sValue),
+                    new Filter("ICText", FilterOperator.Contains, sValue),
+                ], and: false
+            })
+            oBinding.filter([oFilter])
         },
 
         onReportExport() {
             let aCols = this._reportColumnConfig()
-            let oTable = this.byId("idTable")
+            let oTable = this.byId("idReportTable")
 
             // Get filtered items from the table
-            let aItems = oTable.getItems()
+            let aItems = oTable.getRows()
             let aFilteredData = aItems.map(function (oItem) {
                 let oContext = oItem.getBindingContext("reportModel")
                 let oData = oContext.getObject()
@@ -411,8 +435,8 @@ sap.ui.define([
 
             // Check for empty records
             if (!aFilteredData || aFilteredData.length === 0) {
-                MessageToast.show("No data available to export.");
-                return;
+                MessageToast.show("No data available to export.")
+                return
             }
 
             // Spreadsheet settings

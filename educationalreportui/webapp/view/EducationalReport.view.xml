@@ -3,7 +3,8 @@
 	xmlns="sap.m"
 	xmlns:fb="sap.ui.comp.filterbar"
 	xmlns:f="sap.f"
-	xmlns:core="sap.ui.core">
+	xmlns:core="sap.ui.core"
+	xmlns:Table="sap.ui.table">
 	<f:DynamicPage>
 		<f:title>
 			<f:DynamicPageTitle>
@@ -13,116 +14,155 @@
 				</f:heading>
 			</f:DynamicPageTitle>
 		</f:title>
+		
 		<f:content> 
-		<VBox>
-		<Table
-				id="idTable"
-				inset="false"
-				items="{reportModel>/}">
-				<headerToolbar>
-					<OverflowToolbar>
-						<Title text="Report" level="H2"/>				
-						<ToolbarSpacer />
-						<Button text="Export" icon="sap-icon://excel-attachment" press="onReportExport"/>
-						<Link text="Admin Detail Report " endIcon="sap-icon://excel-attachment" press="onDetailExport" emphasized="true"/>
-					</OverflowToolbar>
-				</headerToolbar>
-				<columns>
-					<Column width="10%">
-						<Text text="IC" />
-					</Column>
-					<Column width="30%">
-						<Text text="IC Text" />
-					</Column>
-					<Column width="10%">
-						<Text text="Save As Draft" />
-					</Column>
-					<Column width="10%">
-						<Text text="Pending Approval" />
-					</Column>
-					<Column width="10%">
-						<Text text="Approved" />
-					</Column>
-					<Column width="10%">
-						<Text text="Self Approved" />
-					</Column>
-					<Column width="10%">
-						<Text text="Rejected" />
-					</Column>
-					<Column width="10%">
-						<Text text="No Action Yet" />
-					</Column>
-					<Column width="10%">
-						<Text text="Total" />
-					</Column>
-				</columns>
-				<items>
-					<ColumnListItem vAlign="Middle">
-						<cells>
-							<Text text="{reportModel>IC}" />
-							<Text text="{reportModel>ICText}" />
-							<Text text="{reportModel>D}" />
-							<Text text="{reportModel>PA}" />
-							<Text text="{reportModel>A}" /> 
-							<Text text="{reportModel>SA}" /> 
-							<Text text="{reportModel>R}" />
-							<Text text="{reportModel>NAY}" />
-							<Text text="{reportModel>Total}" />
-						</cells>
-					</ColumnListItem>
-				</items>
-			</Table>
+			<VBox>
+				<table:Table
+					id="idReportTable"
+					rows="{reportModel>/}"
+					selectionMode="None"
+					enableColumnReordering="true"
+					enableCellFilter="true"
+					showColumnVisibilityMenu="true"
+					xmlns:table="sap.ui.table"
+					xmlns:m="sap.m"
+					xmlns:core="sap.ui.core">
 
-			<!-- <HBox class="sapUiMediumMarginTop">
-				<Title text="Admin Detail Report: " level="H6" class="sapUiTinyMarginTop sapUiTinyMarginEnd"/>
-				<Button text="Export" icon="sap-icon://excel-attachment" press="onDetailExport" />
-			</HBox> -->
+					<table:extension>
+						<OverflowToolbar 
+							style="Clear" 
+							class="sapUiSmallMarginTop sapUiSmallMarginBottom">
+							<m:SearchField 
+								placeholder="Filter by IC and IC Text" 
+								search="onICFilter" 
+								width="15rem" 
+								class="sapuisapUiSmallMargin" />
+							<ToolbarSpacer/>
+							<Button 
+								text="Export" 
+								icon="sap-icon://excel-attachment" 
+								press="onReportExport" 
+								class="sapuisapUiSmallMargin" />
+							<Link 
+								text="Admin Detail Report" 
+								endIcon="sap-icon://excel-attachment" 
+								press="onDetailExport" 
+								emphasized="false" 
+								class="sapuisapUiSmallMargin" />
+						</OverflowToolbar>
+					</table:extension>
 
-			<!-- <Table
-				id="idTableDetail"
-				inset="false" class="sapUiMediumMarginTop"
-				items="{reportDetailModel>/}">
-				<headerToolbar>
-					<OverflowToolbar>
-						<Title text="Admin Detail Report" level="H2"/>	
-						<ToolbarSpacer />
-						<Button text="Export" icon="sap-icon://excel-attachment" press="onDetailExport"/>
-					</OverflowToolbar>
-				</headerToolbar>
-				<columns>
-					<Column>
-						<Text text="PSID" />
-					</Column>
-					<Column>
-						<Text text="Name" />
-					</Column>
-					<Column>
-						<Text text="IC" />
-					</Column>
-					<Column>
-						<Text text="ICHR" />
-					</Column>
-					<Column>
-						<Text text="Status" />
-					</Column>
-					<Column>
-						<Text text="Modified On" />
-					</Column>
-				</columns>
-				<items>
-					<ColumnListItem vAlign="Middle">
-						<cells>
-							<Text text="{reportDetailModel>psid}" />
-							<Text text="{reportDetailModel>name}" />
-							<Text text="{reportDetailModel>ic}" />
-							<Text text="{reportDetailModel>ichr}" />
-							<ObjectStatus text="{path: 'reportDetailModel>status', formatter: '.formatter.statusText'}"
-							 	state="{path: 'reportDetailModel>status', formatter: '.formatter.statusState'}" />
-							<Text text="{reportDetailModel>modifiedAt}" />
-						</cells>
-					</ColumnListItem>
-				</items>
-			</Table> -->
+					<table:columns>
+						<table:Column filterProperty="IC" sortProperty="IC">
+							<Label text="IC"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>IC}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+
+						<table:Column width="18rem" filterProperty="ICText" sortProperty="ICText">
+							<Label text="IC Text"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>ICText}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+
+						<table:Column filterProperty="D" sortProperty="D">
+							<Label text="Save As Draft"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>D}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+
+						<table:Column width="8rem" filterProperty="PA" sortProperty="PA">
+							<Label text="Pending Approval"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>PA}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+						
+						<table:Column filterProperty="A" sortProperty="A">
+							<Label text="Approved"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>A}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+						
+						<table:Column filterProperty="SA" sortProperty="SA">
+							<Label text="Self Approved"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>SA}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+						
+						<table:Column filterProperty="R" sortProperty="R">
+							<Label text="Rejected"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>R}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+						
+						<table:Column filterProperty="NAY" sortProperty="NAY">
+							<Label text="No Action Yet"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>NAY}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+						
+						<table:Column filterProperty="Total" sortProperty="Total">
+							<Label text="Total"/>
+							<table:template>
+								<ObjectStatus 
+									text="{reportModel>Total}" 
+									state="{ 
+										path: 'reportModel>IC', 
+										formatter: '.formatter.getTotalState' }"
+									/>
+							</table:template>
+						</table:Column>
+					</table:columns>
+					
+				</table:Table>
 			</VBox>
 		</f:content> 
 	</f:DynamicPage>

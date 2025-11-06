@@ -3,7 +3,11 @@ sap.ui.define([], function () {
     "use strict"
     return {
 
-        statusText (status) {
+        getTotalState(value) {
+            return value === "Total" ? "Error" : "None";
+        },
+
+        statusText(status) {
             switch (status) {
                 case "PA":
                     return "Pending Approval"
@@ -20,20 +24,20 @@ sap.ui.define([], function () {
             }
         },
 
-        statusState (status) {
+        statusState(status) {
             switch (status) {
-                case "PA": 
-                    return "Warning"     
-                case "A": 
-                    return "Success"      
-                case "D": 
-                    return "Information"  
-                case "SA": 
-                    return "Success"      
-                case "R": 
-                    return "Error"       
-                default: 
-                    return "None"        
+                case "PA":
+                    return "Warning"
+                case "A":
+                    return "Success"
+                case "D":
+                    return "Information"
+                case "SA":
+                    return "Success"
+                case "R":
+                    return "Error"
+                default:
+                    return "None"
             }
         }
 
