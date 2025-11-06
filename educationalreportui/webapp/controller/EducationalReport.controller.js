@@ -50,7 +50,7 @@ sap.ui.define([
                 this.getView().setBusy(false)
                 MessageBox.warning("User do not have permission to view IC Records")
             }
-            
+
         },
 
         //To SF-BTP SSO Logged User	
@@ -330,7 +330,7 @@ sap.ui.define([
                     .filter(row => !row._isTotal) // exclude total row
                     .sort((a, b) => a.IC.localeCompare(b.IC)) // sort by IC
 
-                sortedData.push(finalData.find(row => row._isTotal)) 
+                sortedData.push(finalData.find(row => row._isTotal))
 
                 //Set Row Count
                 this.byId("idReportTable").setVisibleRowCount(sortedData.length)
@@ -365,24 +365,29 @@ sap.ui.define([
             let aCols = this._reportColumnConfig()
             let oTable = this.byId("idReportTable")
 
-            // Get filtered items from the table
-            let aItems = oTable.getRows()
-            let aFilteredData = aItems.map(function (oItem) {
-                let oContext = oItem.getBindingContext("reportModel")
-                let oData = oContext.getObject()
+            // Safely extract filtered data from table rows
+            let aFilteredData = oTable.getRows()
+                .map(oItem => {
+                    let oContext = oItem.getBindingContext("reportModel")
+                    if (!oContext) return null
 
-                return {
-                    IC: oData.IC,
-                    ICText: oData.ICText,
-                    D: oData.D,
-                    PA: oData.PA,
-                    A: oData.A,
-                    SA: oData.SA,
-                    R: oData.R,
-                    NAY: oData.NAY,
-                    Total: oData.Total
-                }
-            }.bind(this))
+                    let oData = oContext.getObject()
+                    if (!oData) return null
+
+                    // Return only required fields with fallback values
+                    return {
+                        IC: oData.IC ?? "",
+                        ICText: oData.ICText ?? "",
+                        D: oData.D ?? "",
+                        PA: oData.PA ?? "",
+                        A: oData.A ?? "",
+                        SA: oData.SA ?? "",
+                        R: oData.R ?? "",
+                        NAY: oData.NAY ?? "",
+                        Total: oData.Total ?? ""
+                    }
+                })
+                .filter(Boolean) // Remove null entries
 
             let oSettings = {
                 workbook: { columns: aCols },
@@ -390,14 +395,9 @@ sap.ui.define([
                 fileName: "Education Validation Admin Report.xlsx"
             }
 
-            let oSpreadsheet = new Spreadsheet(oSettings)
-            oSpreadsheet.build()
-                .then(function () {
-                    MessageToast.show("Filtered export completed")
-                })
-                .catch(function (err) {
-                    console.error("Export error:", err)
-                })
+            new Spreadsheet(oSettings).build()
+                .then(() => MessageToast.show("Filtered export completed"))
+                .catch(err => console.error("Export error:", err))
         },
 
         _reportColumnConfig() {
