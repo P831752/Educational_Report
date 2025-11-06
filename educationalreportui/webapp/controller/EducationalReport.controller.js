@@ -194,11 +194,12 @@ sap.ui.define([
                 oModel.read("/FOBusinessUnit", {
                     filters: [oFilter],
                     success: (oData) => {
-
+                        let countSum = 0
                         let countPromises = oData.results.map((item) => {
                             let icCode = item.externalCode
                             return this.getTotalCount(icCode)
                                 .then((count) => {
+                                    countSum = countSum + Number(count)
                                     return {
                                         icCode: icCode, icText: item.description_defaultValue, totalCount: count
                                     }
@@ -211,6 +212,7 @@ sap.ui.define([
 
                         Promise.all(countPromises).then((countResults) => {
                             console.log("All counts:", countResults)
+                            this.allCountSum = countSum
                             resolve(countResults)
                         })
                     },
@@ -245,7 +247,7 @@ sap.ui.define([
             let oBinding = oModel.bindList("/Educational_Details")
             let detailData = []
 
-            oBinding.requestContexts().then((aContexts) => {
+            oBinding.requestContexts(0, this.allCountSum).then((aContexts) => {
                 let oData = aContexts.map((oContext) => oContext.getObject())
 
                 let allStatuses = ["D", "PA", "A", "SA", "R"]
